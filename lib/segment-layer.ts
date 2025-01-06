@@ -113,7 +113,7 @@ map.addLayer({
       6, '#450a0a',    // dark red/black
       '#00FFFF'        // Default to cyan
     ],
-    'line-width': 1.5,
+    'line-width': 3,
     'line-opacity': 1
   }
 });
@@ -129,21 +129,8 @@ map.addLayer({
   },
   paint: {
     'line-color': '#000000',
-    'line-width': 2,
-    'line-opacity': 1,
-    'line-dasharray': [
-      'case',
-      ['==', ['typeof', ['get', 'surfaceType']], 'string'],  // First check if surfaceType exists
-      [
-        'match',
-        ['get', 'surfaceType'],
-        'paved', ['literal', [1]],
-        'unpaved', ['literal', [2, 2]],
-        'unknown', ['literal', [2, 2]],
-        ['literal', [2, 2]]  // Default case
-      ],
-      ['literal', [2, 2]]  // Default if no surfaceType
-    ]
+    'line-width': 4,
+    'line-opacity': 1
   }
 }, layerId);
 

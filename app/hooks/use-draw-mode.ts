@@ -81,39 +81,53 @@ function resampleLineEvery100m(map: mapboxgl.Map, coordinates: [number, number][
     surfaceType: getSurfaceTypeFromMapbox(map, coord)
   }));
   
-  // Create a line from the coordinates
   const line = turf.lineString(coordinates);
-  
-  // Get total length in kilometers
   const length = turf.length(line, {units: 'kilometers'});
   
-  // Calculate how many points we need for 100m intervals
-  const pointsCount = Math.floor(length * 10) + 1; // *10 because 1km = 10 points at 100m intervals
-  
-  if (pointsCount <= 1) return [{
-    coordinates: coordinates[0],
-    surfaceType: getSurfaceTypeFromMapbox(map, coordinates[0])
-  }];
-
-  // Create points at regular intervals
+  // Use Set to track unique distances
+  const seenDistances = new Set<number>();
   const resampled: ResampledPoint[] = [];
-  for (let i = 0; i < pointsCount; i++) {
-    const point = turf.along(line, i * 0.1, {units: 'kilometers'}); // 0.1 km = 100m
-    const coord = point.geometry.coordinates as [number, number];
-    resampled.push({
-      coordinates: coord,
-      surfaceType: getSurfaceTypeFromMapbox(map, coord)
-    });
+  
+  // Add first point
+  const firstPoint = coordinates[0];
+  resampled.push({
+    coordinates: firstPoint,
+    surfaceType: getSurfaceTypeFromMapbox(map, firstPoint)
+  });
+  seenDistances.add(0);
+
+  // Sample every 100m, but avoid duplicates
+  const intervalKm = 0.1; // 100m interval
+  let currentDistance = intervalKm;
+  
+  while (currentDistance <= length) {
+    // Round to 6 decimal places to avoid floating point issues
+    const roundedDistance = Math.round(currentDistance * 1000000) / 1000000;
+    
+    // Skip if we've already added a point at this distance
+    if (!seenDistances.has(roundedDistance)) {
+      const point = turf.along(line, currentDistance, {units: 'kilometers'});
+      const coord = point.geometry.coordinates as [number, number];
+      
+      resampled.push({
+        coordinates: coord,
+        surfaceType: getSurfaceTypeFromMapbox(map, coord)
+      });
+      seenDistances.add(roundedDistance);
+    }
+    
+    currentDistance += intervalKm;
   }
+
+  // Always add the last point if it's not already included
+  const lastPoint = coordinates[coordinates.length - 1];
+  const lastDistance = length;
+  const roundedLastDistance = Math.round(lastDistance * 1000000) / 1000000;
   
-  // Always include the last point if it's not already included
-  const lastOriginal = coordinates[coordinates.length - 1];
-  const lastResampled = resampled[resampled.length - 1].coordinates;
-  
-  if (lastOriginal[0] !== lastResampled[0] || lastOriginal[1] !== lastResampled[1]) {
+  if (!seenDistances.has(roundedLastDistance)) {
     resampled.push({
-      coordinates: lastOriginal,
-      surfaceType: getSurfaceTypeFromMapbox(map, lastOriginal)
+      coordinates: lastPoint,
+      surfaceType: getSurfaceTypeFromMapbox(map, lastPoint)
     });
   }
 
@@ -730,51 +744,40 @@ if (resampledPoints.length >= 2) {
         }];
       }
       
-if (resampledPoints.length >= 2) {
-  // Convert elevation data to [lon, lat, elev] format
-  const pointsWithElevation = elevationData.map(point => [
-    point[0],
-    point[1],
-    point[2]
-  ] as [number, number, number]);
-
-  // Calculate elevation points with actual distances
-  newElevationPoints = calculatePointDistances(pointsWithElevation);
-
-  // Smooth elevation data
-  newElevationPoints = smoothElevationData(newElevationPoints);
-  
-  // Calculate grades with minimum distance
-  grades = calculateGrades(newElevationPoints);
-
-        // Smooth elevation data
-        newElevationPoints = smoothElevationData(newElevationPoints);
+      if (resampledPoints.length >= 2) {
+        // Convert elevation data to [lon, lat, elev] format
+        const pointsWithElevation = elevationData.map(point => [
+          point[0],
+          point[1],
+          point[2]
+        ] as [number, number, number]);
+      
+        // Calculate elevation points with actual distances
+        newElevationPoints = calculatePointDistances(pointsWithElevation);
+      
+        // Smooth elevation data once
+        newElevationPoints = smoothElevationData(newElevationPoints, 2);
         
-        // Calculate grades with minimum distance
+        // Calculate grades once and filter
         grades = calculateGrades(newElevationPoints);
-        
-        // Filter out unrealistic grades (anything over 25% or under -25%)
         const filteredGrades = grades.filter(g => Math.abs(g) <= 25);
         
         // Update max/min grades
-        const maxGrade = filteredGrades.length > 0 ? 
-          Math.max(...filteredGrades) : 0;
-        const minGrade = filteredGrades.length > 0 ? 
-          Math.min(...filteredGrades) : 0;
+        const maxGrade = filteredGrades.length > 0 ? Math.max(...filteredGrades) : 0;
+        const minGrade = filteredGrades.length > 0 ? Math.min(...filteredGrades) : 0;
         
         logStateChange('Grade calculations', { 
           maxGrade, 
           minGrade, 
           pointCount: newElevationPoints.length 
         });
-
-} else {
-  // Handle single point case
-  newElevationPoints = elevationData.map((point) => ({
-    distance: 0,
-    elevation: point[2]
-  }));
-}
+      } else {
+        // Handle single point case
+        newElevationPoints = [{
+          distance: 0,
+          elevation: elevationData[0][2]
+        }];
+      }
   
 // Calculate total distance from the last elevation point
 const totalDistance = newElevationPoints[newElevationPoints.length - 1]?.distance || 0;
