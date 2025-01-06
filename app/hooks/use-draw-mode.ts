@@ -895,20 +895,8 @@ if (lineSource && markerSource) {
           
           // Adjust new points to continue from last distance
           const adjustedNewPoints = newElevationPoints.map((point, index) => {
-            // Query surface type at this point's coordinates using correct Mapbox Streets layers
-            const surfaceInfo = map.queryRenderedFeatures(
-              map.project([resampledPoints[index][0], resampledPoints[index][1]]),
-              { layers: [
-                'road-street',
-                'road-secondary-tertiary', 
-                'road-primary',
-                'road-motorway-trunk'
-              ] }
-            )[0];
-        
-            const surfaceType = surfaceInfo?.properties?.surface ? 
-              mapSurfaceType(surfaceInfo.properties.surface) : 
-              'unknown';
+            // Use the surface type we already determined from road snapping
+            const surfaceType = mapSurfaceType(roadInfo?.surface) || 'unknown';
         
             return {
               distance: lastDistance + point.distance,
@@ -921,6 +909,7 @@ if (lineSource && markerSource) {
           
           return newProfile;
         });
+        
       } // Make sure this closing brace is here
       
           } catch (error) {

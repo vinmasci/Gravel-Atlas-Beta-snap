@@ -414,46 +414,66 @@ if (data.length > 0) {
   </pattern>
 </defs>
 
-{/* First render the grade-colored segments */}
+{/* Render base segments with grade colors */}
 {gradeSegments.map((segment, index) => (
-  <Area
-    key={index}
-    type="monotone"
-    data={segment.points}
-    dataKey="elevation"
-    stroke={segment.color}
-    strokeWidth={0.9}
-    fill={segment.color}
-    fillOpacity={0.4}
-    dot={false}
-    isAnimationActive={false}
-    connectNulls
-  >
+  <React.Fragment key={index}>
+    {/* Base colored area */}
+    <Area
+      type="monotone"
+      data={segment.points}
+      dataKey="elevation"
+      stroke={segment.color}
+      strokeWidth={0.9}
+      fill={`url(#gradient-${index})`}
+      fillOpacity={0.4}
+      dot={false}
+      isAnimationActive={false}
+      connectNulls
+    />
+    
+    {/* Surface type pattern overlay */}
+    {segment.points[0].surfaceType !== 'paved' && (
+      <Area
+        type="monotone"
+        data={segment.points}
+        dataKey="elevation"
+        stroke="none"
+        fill={segment.points[0].surfaceType === 'unpaved' ? 
+          'url(#unpavedPattern)' : 'url(#unknownPattern)'}
+        fillOpacity={0.5}
+        dot={false}
+        isAnimationActive={false}
+        connectNulls
+      />
+    )}
+    
     <defs>
       <linearGradient id={`gradient-${index}`} x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor={segment.color} stopOpacity={0.4}/>
         <stop offset="100%" stopColor={segment.color} stopOpacity={0.1}/>
       </linearGradient>
     </defs>
-  </Area>
+  </React.Fragment>
 ))}
 
-{/* Then render the unpaved pattern overlay for unpaved segments */}
-{gradeSegments.map((segment, index) => (
-  !segment.isPaved && (
-    <Area
-      key={`unpaved-${index}`}
-      type="monotone"
-      data={segment.points}
-      dataKey="elevation"
-      stroke="none"
-      fill="url(#unpavedPattern)"
-      dot={false}
-      isAnimationActive={false}
-      connectNulls
+{/* Add new pattern for unknown surface type */}
+<defs>
+  <pattern 
+    id="unknownPattern" 
+    patternUnits="userSpaceOnUse" 
+    width="6" 
+    height="6" 
+    patternTransform="rotate(45)"
+  >
+    <line 
+      x1="0" y1="0" x2="0" y2="6" 
+      stroke="currentColor" 
+      strokeWidth="1"
+      strokeDasharray="2,2"
+      opacity="0.2"
     />
-  )
-))}
+  </pattern>
+</defs>
 
               {/* Render top stroke line */}
               <Area
