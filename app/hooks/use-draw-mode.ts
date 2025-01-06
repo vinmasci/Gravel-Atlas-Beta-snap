@@ -47,24 +47,29 @@ interface ResampledPoint {
 }
 
 const getSurfaceTypeFromMapbox = (map: mapboxgl.Map, point: [number, number]): 'paved' | 'unpaved' | 'unknown' => {
-  // Query the gravel roads layer first
-  const gravelFeatures = map.queryRenderedFeatures(
-    map.project(point as mapboxgl.LngLatLike),
-    { layers: ['gravel_roads'] }  // Your gravel roads layer ID
-  );
-
-  if (gravelFeatures.length > 0) {
-    return 'unpaved';
-  }
-
-  // Query standard road layers
+  // Query standard road layers using Mapbox Streets layer names
   const roadFeatures = map.queryRenderedFeatures(
     map.project(point as mapboxgl.LngLatLike),
-    { layers: ['road'] }  // Mapbox default road layer
+    { layers: [
+      'road-street',
+      'road-secondary-tertiary',
+      'road-primary',
+      'road-motorway-trunk'
+    ]}
   );
 
-  if (roadFeatures.length > 0 && roadFeatures[0].properties?.surface) {
-    return mapSurfaceType(roadFeatures[0].properties.surface);
+  if (roadFeatures.length > 0) {
+    // If surface is explicitly defined, use it
+    if (roadFeatures[0].properties?.surface) {
+      return mapSurfaceType(roadFeatures[0].properties.surface);
+    }
+    
+    // Otherwise infer from road class
+    const roadClass = roadFeatures[0].properties?.class;
+    if (roadClass === 'track' || roadClass === 'service') {
+      return 'unpaved';
+    }
+    return 'paved';
   }
 
   return 'unknown';
@@ -900,10 +905,15 @@ if (lineSource && markerSource) {
           
           // Adjust new points to continue from last distance
           const adjustedNewPoints = newElevationPoints.map((point, index) => {
-            // Query surface type at this point's coordinates
+            // Query surface type at this point's coordinates using correct Mapbox Streets layers
             const surfaceInfo = map.queryRenderedFeatures(
               map.project([resampledPoints[index][0], resampledPoints[index][1]]),
-              { layers: ['road', 'gravel_roads'] }  // Include your road layers
+              { layers: [
+                  'road-street',
+                  'road-secondary-tertiary', 
+                  'road-primary',
+                  'gravel_roads'
+                ] }
             )[0];
         
             const surfaceType = surfaceInfo?.properties?.surface ? 
