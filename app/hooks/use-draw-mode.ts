@@ -207,40 +207,30 @@ function calculateGrades(points: ElevationPoint[], minDistance: number = 0.05): 
 }
 
 async function getElevation(coordinates: [number, number][]): Promise<[number, number, number][]> {
-    logStateChange('getElevation called', { coordinates });
-    
-    if (coordinates.length === 0) {
-        return [];
-    }
+  try {
+      const response = await fetch('/api/get-elevation', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ coordinates }),
+      });
 
-    try {
-        const response = await fetch('/api/get-elevation', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ coordinates }),
-        });
+      const data = await response.json();
+      logStateChange('Elevation data received', { data });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+      // Handle new data format from API
+      const processedData = data.coordinates.map(point => [
+          point.coordinates[0],
+          point.coordinates[1],
+          point.elevation
+      ] as [number, number, number]);
 
-        const data = await response.json();
-        logStateChange('Elevation data received', { data });
-        
-        // Log the actual elevation values for debugging
-        console.log('Elevation values:', {
-            coordinates: data.coordinates,
-            elevations: data.coordinates.map(([,,e]: [number, number, number]) => e)
-        });
-        
-        return data.coordinates;
-    } catch (error) {
-        console.error('Error fetching elevation:', error);
-        // Return original coordinates with 0 elevation if there's an error
-        return coordinates.map(([lng, lat]) => [lng, lat, 0] as [number, number, number]);
-    }
+      return processedData;
+  } catch (error) {
+      console.error('Error fetching elevation:', error);
+      return coordinates.map(([lng, lat]) => [lng, lat, 0] as [number, number, number]);
+  }
 }
 
 export const useDrawMode = (map: Map | null) => {
@@ -909,11 +899,11 @@ if (lineSource && markerSource) {
             const surfaceInfo = map.queryRenderedFeatures(
               map.project([resampledPoints[index][0], resampledPoints[index][1]]),
               { layers: [
-                  'road-street',
-                  'road-secondary-tertiary', 
-                  'road-primary',
-                  'gravel_roads'
-                ] }
+                'road-street',
+                'road-secondary-tertiary', 
+                'road-primary',
+                'road-motorway-trunk'
+              ] }
             )[0];
         
             const surfaceType = surfaceInfo?.properties?.surface ? 
