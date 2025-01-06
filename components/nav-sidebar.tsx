@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { cn } from "@/lib/utils"
-import { Search, Layers, Map, Navigation, ChevronRight, ChevronLeft, Camera, Route, FileUp } from 'lucide-react'
+import { Search, Layers, Map, Navigation, ChevronRight, ChevronLeft, Camera, Route, FileUp, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -17,13 +17,13 @@ import {
 import { MAP_STYLES } from '@/app/constants/map-styles'
 import type { MapStyle } from '@/app/types/map'
 
-// Your existing interface remains the same
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   onSearch: (query: string) => void
   onLocationClick: () => void
   onZoomIn: () => void
   onZoomOut: () => void
   onLayerToggle: (layerId: string) => void
+  onGpxLoad?: (gpxData: string) => void
   selectedStyle: MapStyle
   onStyleChange: (style: MapStyle) => void
   availableLayers: Array<{ id: string; name: string; visible: boolean }>
@@ -48,6 +48,7 @@ export function NavSidebar({
   onZoomIn,
   onZoomOut,
   onLayerToggle,
+  onGpxLoad,
   selectedStyle,
   onStyleChange,
   availableLayers,
@@ -58,8 +59,56 @@ export function NavSidebar({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false)
+  const [selectedGpxFile, setSelectedGpxFile] = useState<File | null>(null)
+  const gpxFileInputRef = useRef<HTMLInputElement>(null)
   const { user } = useUser()
   const { toast } = useToast()
+
+  const handleGpxFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      if (file.name.toLowerCase().endsWith('.gpx')) {
+        setSelectedGpxFile(file)
+        handleGpxFile(file)
+      } else {
+        toast({
+          title: "Invalid File Type",
+          description: "Please select a .gpx file",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const handleGpxFile = async (file: File) => {
+    try {
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const text = e.target?.result
+        if (typeof text === 'string' && onGpxLoad) {
+          onGpxLoad(text)
+          toast({
+            title: "Success",
+            description: "GPX file loaded successfully",
+          })
+        }
+      }
+      reader.readAsText(file)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load GPX file",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const clearGpxSelection = () => {
+    setSelectedGpxFile(null)
+    if (gpxFileInputRef.current) {
+      gpxFileInputRef.current.value = ''
+    }
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,24 +123,24 @@ export function NavSidebar({
       )}
       {...props}
     >
-<div
-  className={cn(
-    "group/sidebar relative flex flex-col gap-4 p-4",
-    "bg-background/100 dark:bg-background/100", // Reverted back to original
-    "backdrop-blur-md",
-    "border-r border-border/40",
-    "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
-    isCollapsed ? "w-16" : "w-80"
-  )}
->
-        {/* Toggle Button - Updated styling */}
+      <div
+        className={cn(
+          "group/sidebar relative flex flex-col gap-4 p-4",
+          "bg-background/100 dark:bg-background/100",
+          "backdrop-blur-md",
+          "border-r border-border/40",
+          "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          isCollapsed ? "w-16" : "w-80"
+        )}
+      >
+        {/* Toggle Button */}
         <Button
-          variant="secondary" // Changed to secondary for better contrast
+          variant="secondary"
           size="icon"
           className={cn(
             "absolute -right-12 top-4 z-50",
-            "bg-background/80 backdrop-blur-sm shadow-md", // Increased background opacity
-            "hover:bg-accent hover:text-accent-foreground", // Added hover state
+            "bg-background/80 backdrop-blur-sm shadow-md",
+            "hover:bg-accent hover:text-accent-foreground",
             "transition-transform duration-300 ease-in-out"
           )}
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -113,82 +162,82 @@ export function NavSidebar({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1"
               />
-<Button 
-  type="submit" 
-  size="icon"
-  variant="secondary"
-  className="min-w-[40px] min-h-[40px] p-0 flex items-center justify-center hover:bg-accent hover:text-accent-foreground"
->
-  <Search className="h-4 w-4" />
-</Button>
+              <Button 
+                type="submit" 
+                size="icon"
+                variant="secondary"
+                className="min-w-[40px] min-h-[40px] p-0 flex items-center justify-center hover:bg-accent hover:text-accent-foreground"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
             </form>
-) : (
-    <div className="flex justify-center">
-<Button 
-  variant="secondary"
-  size="icon"
-  onClick={() => setIsCollapsed(false)}
-  className={cn(
-    "min-w-[40px] min-h-[40px] p-0",
-    "bg-background/80 backdrop-blur-sm",
-    "hover:bg-accent hover:text-accent-foreground",
-    "transition-colors duration-300 ease-in-out",
-    "flex items-center justify-center"
-  )}
->
-  <Search className="h-4 w-4" />
-</Button>
-    </div>
-        )}
-        
-        {/* Map Controls */}
-        <div className={cn(
-          "flex gap-2",
-          isCollapsed ? "flex-col items-center" : "md:flex"
-        )}>
-          <Button 
-            variant="ghost"
-            size="icon" 
-            onClick={onZoomIn}
-            className={cn(
-              "bg-background/80 backdrop-blur-sm",
-              "hover:bg-accent hover:text-accent-foreground",
-              "transition-colors duration-300 ease-in-out"
-            )}
-          >
-            <span className="text-lg font-bold">+</span>
-          </Button>
-          <Button 
-            variant="secondary"
-            size="icon" 
-            onClick={onZoomOut}
-            className={cn(
-              "bg-background/80 backdrop-blur-sm",
-              "hover:bg-accent hover:text-accent-foreground",
-              "transition-colors duration-300 ease-in-out"
-            )}
-          >
-            <span className="text-lg font-bold">−</span>
-          </Button>
-          <Button 
-            variant="secondary"
-            size="icon" 
-            onClick={onLocationClick}
-            className={cn(
-              "bg-background/80 backdrop-blur-sm",
-              "hover:bg-accent hover:text-accent-foreground",
-              "transition-colors duration-300 ease-in-out"
-            )}
-          >
-            <Navigation className="h-4 w-4" />
-          </Button>
-        </div>
+          ) : (
+            <div className="flex justify-center">
+              <Button 
+                variant="secondary"
+                size="icon"
+                onClick={() => setIsCollapsed(false)}
+                className={cn(
+                  "min-w-[40px] min-h-[40px] p-0",
+                  "bg-background/80 backdrop-blur-sm",
+                  "hover:bg-accent hover:text-accent-foreground",
+                  "transition-colors duration-300 ease-in-out",
+                  "flex items-center justify-center"
+                )}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          
+          {/* Map Controls */}
+          <div className={cn(
+            "flex gap-2",
+            isCollapsed ? "flex-col items-center" : "md:flex"
+          )}>
+            <Button 
+              variant="ghost"
+              size="icon" 
+              onClick={onZoomIn}
+              className={cn(
+                "bg-background/80 backdrop-blur-sm",
+                "hover:bg-accent hover:text-accent-foreground",
+                "transition-colors duration-300 ease-in-out"
+              )}
+            >
+              <span className="text-lg font-bold">+</span>
+            </Button>
+            <Button 
+              variant="secondary"
+              size="icon" 
+              onClick={onZoomOut}
+              className={cn(
+                "bg-background/80 backdrop-blur-sm",
+                "hover:bg-accent hover:text-accent-foreground",
+                "transition-colors duration-300 ease-in-out"
+              )}
+            >
+              <span className="text-lg font-bold">−</span>
+            </Button>
+            <Button 
+              variant="secondary"
+              size="icon" 
+              onClick={onLocationClick}
+              className={cn(
+                "bg-background/80 backdrop-blur-sm",
+                "hover:bg-accent hover:text-accent-foreground",
+                "transition-colors duration-300 ease-in-out"
+              )}
+            >
+              <Navigation className="h-4 w-4" />
+            </Button>
+          </div>
 
           {/* Accordions or Icons */}
           {!isCollapsed ? (
             <Accordion type="multiple" className="w-full">
               {/* Map Layers */}
-              <AccordionItem value="map-layers" className="border-none"> {/* Removed border */}
+              <AccordionItem value="map-layers" className="border-none">
                 <AccordionTrigger className="hover:bg-accent rounded-md px-2 py-3 transition-colors">
                   <div className="flex items-center gap-2">
                     <Map className="h-4 w-4" />
@@ -331,51 +380,75 @@ export function NavSidebar({
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Overlay GPX */}
-              <AccordionItem value="overlay-gpx" className="border-none">
+{/* Overlay GPX */}
+<AccordionItem value="overlay-gpx" className="border-none">
                 <AccordionTrigger className="hover:bg-accent rounded-md px-2 py-3 transition-colors">
                   <div className="flex items-center gap-2">
                     <FileUp className="h-4 w-4" />
-                    Overlay GPX
+                    Add GPX Route
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-2">
-                  <Button 
-                    className="w-full hover:bg-accent hover:text-accent-foreground"
-                    variant="secondary"
-                  >
-                    Upload GPX File
-                  </Button>
+                  <input
+                    type="file"
+                    accept=".gpx"
+                    onChange={handleGpxFileSelect}
+                    ref={gpxFileInputRef}
+                    className="hidden"
+                  />
+                  
+                  {!selectedGpxFile ? (
+                    <Button 
+                      className="w-full hover:bg-accent hover:text-accent-foreground"
+                      variant="secondary"
+                      onClick={() => gpxFileInputRef.current?.click()}
+                    >
+                      <FileUp className="mr-2 h-4 w-4" />
+                      Add GPX File
+                    </Button>
+                  ) : (
+                    <div className="flex items-center justify-between p-2 bg-accent/50 rounded-md">
+                      <span className="text-sm truncate max-w-[180px]">{selectedGpxFile.name}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={clearGpxSelection}
+                        className="h-8 w-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
           ) : (
-/* Icon Mode - Updated with hover states */
-<div className="flex flex-col gap-3 items-center">
-  {[
-    { icon: <Map className="h-4 w-4" />, title: "Map Layers" },
-    { icon: <Layers className="h-4 w-4" />, title: "Map Overlays" },
-    { icon: <Map className="h-4 w-4" />, title: "Points of Interest" },
-    { icon: <Camera className="h-4 w-4" />, title: "Upload Photo" },
-    { icon: <Route className="h-4 w-4" />, title: "Draw Segment" },
-    { icon: <FileUp className="h-4 w-4" />, title: "Overlay GPX" }
-  ].map((item, index) => (
-    <Button 
-      key={index}
-      variant="ghost"
-      size="icon" 
-      onClick={() => setIsCollapsed(false)} 
-      title={item.title}
-      className={cn(
-        "bg-background/80 backdrop-blur-sm",
-        "hover:bg-accent hover:text-accent-foreground",
-        "transition-colors duration-300 ease-in-out"
-      )}
-    >
-      {item.icon}
-    </Button>
-  ))}
-</div>
+            /* Icon Mode - Updated with hover states */
+            <div className="flex flex-col gap-3 items-center">
+              {[
+                { icon: <Map className="h-4 w-4" />, title: "Map Layers" },
+                { icon: <Layers className="h-4 w-4" />, title: "Map Overlays" },
+                { icon: <Map className="h-4 w-4" />, title: "Points of Interest" },
+                { icon: <Camera className="h-4 w-4" />, title: "Upload Photo" },
+                { icon: <Route className="h-4 w-4" />, title: "Draw Segment" },
+                { icon: <FileUp className="h-4 w-4" />, title: "Add GPX Route" }
+              ].map((item, index) => (
+                <Button 
+                  key={index}
+                  variant="ghost"
+                  size="icon" 
+                  onClick={() => setIsCollapsed(false)} 
+                  title={item.title}
+                  className={cn(
+                    "bg-background/80 backdrop-blur-sm",
+                    "hover:bg-accent hover:text-accent-foreground",
+                    "transition-colors duration-300 ease-in-out"
+                  )}
+                >
+                  {item.icon}
+                </Button>
+              ))}
+            </div>
           )}
         </div>
       </div>
