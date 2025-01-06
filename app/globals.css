@@ -1,0 +1,196 @@
+@import url('https://site-assets.fontawesome.com/releases/v6.4.0/css/all.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Single photo preview */
+.photo-marker-popup .mapboxgl-popup-content {
+  padding: 4px !important;  /* Add back some padding */
+  border-radius: 0.25rem !important;
+  overflow: hidden;
+  background: white;
+  line-height: 0;
+}
+
+.photo-marker-popup .photo-preview img {
+  width: 120px !important;  /* Force smaller image size */
+  height: 120px !important;
+  object-fit: cover;
+  display: block;  /* Remove any line-height issues */
+}
+
+.photo-marker-popup .photo-preview {
+  line-height: 0;
+}
+
+.photo-marker-popup .mapboxgl-popup-tip {
+  border-top-color: white !important;
+}
+
+/* Cluster preview */
+.cluster-preview-popup .mapboxgl-popup-content {
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.cluster-preview-popup .mapboxgl-popup-tip {
+  display: none;
+}
+
+/* Dark mode support */
+.dark .photo-marker-popup .mapboxgl-popup-content {
+  background: rgb(23, 23, 23);
+}
+
+.dark .photo-marker-popup .mapboxgl-popup-tip {
+  border-top-color: rgb(23, 23, 23) !important;
+}
+
+/* Ensure popups appear above markers */
+.mapboxgl-popup {
+  z-index: 3;
+}
+
+/* Detailed photo popup */
+.photo-detail-popup .mapboxgl-popup-content {
+  padding: 0 !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+.photo-detail-popup .mapboxgl-popup-close-button {
+  color: white;
+  font-size: 16px;
+  padding: 5px 10px;
+  right: 2px;
+  top: 2px;
+}
+
+.photo-detail-popup .mapboxgl-popup-tip {
+  border-top-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Road popup */
+
+.mapboxgl-popup-content {
+  @apply bg-white dark:bg-gray-800 shadow-lg;
+}
+
+.mapboxgl-popup-tip {
+  @apply border-b-white dark:border-b-gray-800;
+}
+
+.road-popup {
+  @apply max-w-[300px];
+}
+
+.road-popup .mapboxgl-popup-content {
+  @apply p-0 rounded-lg;
+}
+
+/* Segment popup */
+
+.segment-hover-popup .mapboxgl-popup-content {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.segment-hover-popup .mapboxgl-popup-tip {
+  display: none;
+}
+
+/* Add these to your globals.css */
+.nav-sidebar {
+  @apply fixed left-0 top-0 z-50 flex h-screen flex-col items-center gap-2 border-r p-2;
+  @apply bg-background/40 backdrop-blur-xl;
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  width: 4rem; /* 64px */
+}
+
+.nav-sidebar.expanded {
+  width: 20rem; /* 320px */
+}
+
+/* Add this for smooth content transition */
+.nav-sidebar-content {
+  @apply w-full overflow-hidden;
+  opacity: 0;
+  transition: opacity 150ms ease-in-out;
+}
+
+.nav-sidebar.expanded .nav-sidebar-content {
+  opacity: 1;
+}
