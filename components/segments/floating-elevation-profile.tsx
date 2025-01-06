@@ -117,7 +117,18 @@ const {
   ascent,
   descent
 } = useMemo(() => {
+  console.log('useMemo running with:', {
+    isDrawing: drawMode?.isDrawing,
+    elevationProfile: drawMode?.elevationProfile,
+    profileLength: drawMode?.elevationProfile?.length
+  });
+
   if (!drawMode?.isDrawing || !drawMode.elevationProfile) {
+    console.log('Returning default data because:', {
+      noDrawMode: !drawMode,
+      notDrawing: !drawMode?.isDrawing,
+      noProfile: !drawMode?.elevationProfile
+    });
     return {
       displayData: [{ distance: 0, elevation: 0, grade: 0, gradeColor: '#84CC16' }],
       minElevation: 0,
@@ -187,21 +198,21 @@ const data = drawMode.elevationProfile.map((point, index) => {
 const segments = [];
 if (data.length > 0) {
   let currentColor = data[0].gradeColor;
-  let currentPaved = data[0].isPaved;
+  let currentSurfaceType = data[0].surfaceType;
   let currentSegment = [data[0]];
 
   for (let i = 1; i < data.length; i++) {
-    const surfaceChanged = data[i].isPaved !== currentPaved;
+    const surfaceChanged = data[i].surfaceType !== currentSurfaceType;
     const colorChanged = data[i].gradeColor !== currentColor;
 
     if (colorChanged || surfaceChanged) {
       segments.push({
         points: [...currentSegment, data[i]],
         color: currentColor,
-        isPaved: currentPaved
+        surfaceType: currentSurfaceType
       });
       currentColor = data[i].gradeColor;
-      currentPaved = data[i].isPaved;
+      currentSurfaceType = data[i].surfaceType;
       currentSegment = [data[i]];
     } else {
       currentSegment.push(data[i]);
@@ -213,13 +224,21 @@ if (data.length > 0) {
     segments.push({
       points: currentSegment,
       color: currentColor,
-      isPaved: currentPaved
+      surfaceType: currentSurfaceType
     });
   }
 }
 
   const maxGrade = Math.max(...grades);
   const minGrade = Math.min(...grades);
+
+// At the end of useMemo, right before the return statement
+console.log('Returning from useMemo:', {
+  displayDataLength: data.length,
+  gradeSegmentsLength: segments.length,
+  displayDataSample: data[0],
+  gradeSegmentSample: segments[0]
+});
 
   return {
     displayData: data,

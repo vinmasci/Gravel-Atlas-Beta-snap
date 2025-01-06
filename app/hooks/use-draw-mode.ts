@@ -1053,6 +1053,7 @@ const finishDrawing = useCallback(() => {
     }
   
     if (layerRefs.current.drawing) {
+      map.removeLayer(`${layerRefs.current.drawing}-dashes`);  // Remove dashes layer
       map.removeLayer(`${layerRefs.current.drawing}-stroke`); // Remove stroke layer
       map.removeLayer(layerRefs.current.drawing);            // Remove main line layer
       map.removeSource(layerRefs.current.drawing);
