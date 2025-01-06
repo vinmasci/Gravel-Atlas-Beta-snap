@@ -890,24 +890,20 @@ if (lineSource && markerSource) {
         });
   
         setElevationProfile(prev => {
-          // Get the last distance from previous profile
           const lastDistance = prev.length > 0 ? prev[prev.length - 1].distance : 0;
           
-          // Adjust new points to continue from last distance
-          const adjustedNewPoints = newElevationPoints.map((point, index) => {
-            // Use the surface type we already determined from road snapping
-            const surfaceType = mapSurfaceType(roadInfo?.surface) || 'unknown';
-        
+          // Use the surface type from road info we already have
+          const surfaceType = mapSurfaceType(roadInfo?.surface) || 'unknown';
+          
+          const adjustedNewPoints = newElevationPoints.map(point => {
             return {
               distance: lastDistance + point.distance,
               elevation: point.elevation,
-              surfaceType: surfaceType
+              surfaceType: surfaceType  // Use the consistent surface type from road info
             };
           });
         
-          const newProfile = [...prev, ...adjustedNewPoints];
-          
-          return newProfile;
+          return [...prev, ...adjustedNewPoints];
         });
         
       } // Make sure this closing brace is here

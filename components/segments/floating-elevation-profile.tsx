@@ -434,46 +434,43 @@ console.log('Returning from useMemo:', {
 </defs>
 
 {/* Render base segments with grade colors */}
+{/* First layer: Grade-colored elevation profile */}
 {gradeSegments.map((segment, index) => (
-  <React.Fragment key={index}>
-    {/* Base colored area */}
+  <Area
+    key={`grade-${index}`}
+    type="monotone"
+    data={segment.points}
+    dataKey="elevation"
+    stroke={segment.color}
+    strokeWidth={0.9}
+    fill={`url(#gradient-${index})`}
+    fillOpacity={0.4}
+    dot={false}
+    isAnimationActive={false}
+    connectNulls
+  />
+))}
+
+{/* Second layer: Surface type patterns */}
+{gradeSegments.map((segment, index) => {
+  const surfaceType = segment.points[0].surfaceType;
+  if (surfaceType === 'paved') return null;
+  
+  return (
     <Area
+      key={`surface-${index}`}
       type="monotone"
       data={segment.points}
       dataKey="elevation"
-      stroke={segment.color}
-      strokeWidth={0.9}
-      fill={`url(#gradient-${index})`}
-      fillOpacity={0.4}
+      stroke="none"
+      fill={`url(#${surfaceType}Pattern)`}
+      fillOpacity={0.3}
       dot={false}
       isAnimationActive={false}
       connectNulls
     />
-    
-    {/* Surface type pattern overlay */}
-    {segment.points[0].surfaceType !== 'paved' && (
-      <Area
-        type="monotone"
-        data={segment.points}
-        dataKey="elevation"
-        stroke="none"
-        fill={segment.points[0].surfaceType === 'unpaved' ? 
-          'url(#unpavedPattern)' : 'url(#unknownPattern)'}
-        fillOpacity={0.5}
-        dot={false}
-        isAnimationActive={false}
-        connectNulls
-      />
-    )}
-    
-    <defs>
-      <linearGradient id={`gradient-${index}`} x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor={segment.color} stopOpacity={0.4}/>
-        <stop offset="100%" stopColor={segment.color} stopOpacity={0.1}/>
-      </linearGradient>
-    </defs>
-  </React.Fragment>
-))}
+  );
+})}
 
 {/* Add new pattern for unknown surface type */}
 <defs>
