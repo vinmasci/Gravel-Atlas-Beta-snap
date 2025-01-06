@@ -80,8 +80,8 @@ function calculateElevationStats(points: ElevationPoint[]) {
   }
 
   return {
-    ascent: Math.round(ascent),
-    descent: Math.round(descent)
+    ascent: isNaN(ascent) ? 0 : Math.round(ascent),
+    descent: isNaN(descent) ? 0 : Math.round(descent)
   };
 }
 
@@ -414,23 +414,20 @@ console.log('Returning from useMemo:', {
               
 {/* Define the stripe pattern once */}
 <defs>
-  <pattern 
-    id="unpavedPattern" 
-    patternUnits="userSpaceOnUse" 
-    width="6" 
-    height="6" 
-    patternTransform="rotate(45)"
-  >
-    <line 
-      x1="0" 
-      y1="0" 
-      x2="0" 
-      y2="6" 
-      stroke="currentColor" 
-      strokeWidth="2"
-      opacity="0.2"
-    />
-  </pattern>
+<pattern 
+  id="unpavedPattern" 
+  patternUnits="userSpaceOnUse" 
+  width="4" 
+  height="4"
+>
+  <circle 
+    cx="2" 
+    cy="2" 
+    r="1" 
+    fill="#000" 
+    opacity="0.4"
+  />
+</pattern>
 </defs>
 
 {/* Render base segments with grade colors */}
@@ -443,7 +440,7 @@ console.log('Returning from useMemo:', {
     dataKey="elevation"
     stroke={segment.color}
     strokeWidth={0.9}
-    fill={`url(#gradient-${index})`}
+    fill={segment.color}  // Direct color fill instead of gradient
     fillOpacity={0.4}
     dot={false}
     isAnimationActive={false}
@@ -474,21 +471,20 @@ console.log('Returning from useMemo:', {
 
 {/* Add new pattern for unknown surface type */}
 <defs>
-  <pattern 
-    id="unknownPattern" 
-    patternUnits="userSpaceOnUse" 
-    width="6" 
-    height="6" 
-    patternTransform="rotate(45)"
-  >
-    <line 
-      x1="0" y1="0" x2="0" y2="6" 
-      stroke="currentColor" 
-      strokeWidth="1"
-      strokeDasharray="2,2"
-      opacity="0.2"
-    />
-  </pattern>
+<pattern 
+  id="unpavedPattern" 
+  patternUnits="userSpaceOnUse" 
+  width="4" 
+  height="4"
+>
+  <circle 
+    cx="2" 
+    cy="2" 
+    r="1" 
+    fill="#000" 
+    opacity="0.4"
+  />
+</pattern>
 </defs>
 
               {/* Render top stroke line */}
