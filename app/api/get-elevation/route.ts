@@ -53,7 +53,11 @@ async function getElevationFromMapbox(coordinates: [number, number][]) {
             // Convert RGB values to elevation using Mapbox's formula
             const elevation = -10000 + ((r * 256 * 256 + g * 256 + b) * 0.1);
             
-            return [lng, lat, Math.round(elevation)] as [number, number, number];
+            return {
+              coordinates: [lng, lat],
+              elevation: Math.round(elevation),
+              surfaceType: 'unknown' // Will be populated by caller
+            };
         });
 
         const results = await Promise.all(promises);
