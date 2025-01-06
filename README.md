@@ -2,8 +2,7 @@
 
 SOME RULES
 IMPORTANT!! Dont try to edit my files yourself
-IMPORTANT!! Be specific when adding code suggestions.. always show precisely where and how to add code into existing files.. 
-IMPORTANT!! When providing code changes, show me precisely where to put it by showing me code that comes before and after where you want the change.. dont simply say, near or above the handlers..
+IMPORTANT!! Be specific when adding code suggestions.. always show precisely where and how to add code into existing files.. Show code before and after!
 
 ## 🎯 Project Overview
 A web application for mapping and exploring gravel roads across Australia, built with Next.js, Mapbox, and modern web technologies.

@@ -675,7 +675,28 @@ logStateChange('Points resampled', {
 });
 
 const elevationData = await getElevation(resampledPoints);
-      logStateChange('Elevation data received', { elevationData });
+logStateChange('Elevation data received', { elevationData });
+      
+// Calculate total distance from the last elevation point
+const lastProfileDistance = elevationProfile.length > 0 
+  ? elevationProfile[elevationProfile.length - 1].distance 
+  : 0;
+
+// Process the elevation data into the correct format with surface types
+if (elevationData.length >= 2) {
+  const newElevationPoints = elevationData.map((point, index) => ({
+    distance: lastProfileDistance + (point.coordinates 
+      ? turf.length(turf.lineString([
+          index > 0 ? elevationData[index - 1].coordinates : point.coordinates,
+          point.coordinates
+        ]), { units: 'kilometers' })
+      : 0),
+    elevation: point.elevation,
+    surfaceType: point.surfaceType || resampledData[index]?.surfaceType || 'unknown'
+  }));
+
+  setElevationProfile(prev => [...prev, ...newElevationPoints]);
+}
       
 // Create new segment
 const newSegment: Segment = {
